@@ -32,6 +32,7 @@ class exports.Rewriter
     @normalizeLines()
     @tagPostfixConditionals()
     @addImplicitBracesAndParens()
+    @addImplicitParamsParens()
     @addLocationDataToGeneratedTokens()
     @tokens
 
@@ -130,6 +131,42 @@ class exports.Rewriter
       backStack.pop() if @tag(i) in EXPRESSION_START and backStack.length
       i -= 1
     @tag(i) in tags
+
+  findTag: (i, j, pattern) ->
+    pattern = [pattern] if typeof pattern is 'string'
+    while t = @tag i
+      return i if t in pattern
+      return -1 if 0 < j <= i
+      i++
+    -1
+
+
+  # Look for signs of implicit calls and objects in the token stream and
+  # add them.
+  addImplicitParamsParens: ->
+    @scanTokens (token, i, tokens) ->
+      [tag]     = token
+      forward   = (n) -> n
+
+      # Helper functions
+      startImplicitParams = (j) ->
+        tokens.splice j, 0, generate 'PARAM_START', '('
+
+      endImplicitParams = ->
+        tokens.splice i, 0, generate 'PARAM_END', ')', ['', 'end of input', token[2]]
+
+      if tag in LINEBREAKS
+        next_term = @findTag(i+1, -1, LINEBREAKS)
+        next_binder = @findTag(i+1, next_term, MONADIC_BINDERS)
+        if i < next_binder < next_term
+          startImplicitParams i + 1
+          return forward(2)
+
+      if tag in MONADIC_BINDERS
+        endImplicitParams()
+        return forward(2)
+
+      return forward(1)
 
   # Look for signs of implicit calls and objects in the token stream and
   # add them.
@@ -490,6 +527,8 @@ IMPLICIT_CALL    = [
 ]
 
 IMPLICIT_UNSPACED_CALL = ['+', '-']
+
+MONADIC_BINDERS = [ '<--', '<=-' ]
 
 # Tokens that always mark the end of an implicit call for single-liners.
 IMPLICIT_END     = ['POST_IF', 'FOR', 'WHILE', 'UNTIL', 'WHEN', 'BY',

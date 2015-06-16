@@ -113,6 +113,27 @@ grammar =
     o 'Switch'
     o 'Class'
     o 'Throw'
+    o 'Monadic'
+  ]
+
+  Monadic: [
+    o 'MONADIC Value MonadicBlock',        -> yy.createMonadic $2, $3
+  ]
+
+  MonadicBlock: [
+    o 'INDENT MonadicBody OUTDENT',             -> $2
+  ]
+
+  MonadicBody: [
+    o 'MonadicLine',                            -> [$1]
+    o 'MonadicBody TERMINATOR MonadicLine',     -> $1.push $3; return $1
+    o 'MonadicBody TERMINATOR'
+  ]
+
+  MonadicLine: [
+    o 'PARAM_START ParamList PARAM_END <-- Expression', -> yy.createBinderLine $2, $5, 'func'
+    o 'PARAM_START ParamList PARAM_END <=- Expression', -> yy.createBinderLine $2, $5, 'boundfunc'
+    o 'Expression',                             -> yy.createExpressionLine $1
   ]
 
   # An indented block of expressions. Note that the [Rewriter](rewriter.html)

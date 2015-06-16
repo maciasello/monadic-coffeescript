@@ -2141,6 +2141,56 @@ exports.Switch = class Switch extends Base
     fragments.push @makeCode @tab + '}'
     fragments
 
+createCall =
+  (monad, args, method) ->
+    u = new Value monad, [new Access new Literal method]
+    new Call u, args
+
+createBindCall =
+  (monad, monadicValue, f) ->
+    createCall monad, [monadicValue, f], 'bind'
+
+createLambdaAndBind =
+  (monad, params, val, funcGlyph, block) ->
+    params = params ? []
+    callback = new Code params, Block.wrap([block]), funcGlyph
+    createBindCall monad, val, callback
+
+createBind =
+  (monad, params, val, funcGlyph, block) ->
+    createLambdaAndBind monad, params, val, funcGlyph, block
+
+createThen =
+  (monad, val, block) ->
+    createLambdaAndBind monad, null, val, 'boundfunc', block
+
+exports.createMonadic = (monad, lines) ->
+  if lines[lines.length-1].type != 'pass'
+    throw new Error "last line is a bind"
+
+  currentBlock = lines[lines.length-1].val
+  for line in lines[0...-1] by -1
+    if line.type == 'bind'
+      currentBlock = createBind monad, line.params, line.val, line.funcGlyph, currentBlock
+    else if line.type == 'pass'
+      currentBlock = createThen monad, line.val, currentBlock
+    else
+      throw new Error "unexpected line type in monadic block"
+
+  return currentBlock
+
+exports.createBinderLine =
+  (params, val, funcGlyph) ->
+    type: 'bind'
+    params: params
+    val: val
+    funcGlyph: funcGlyph
+
+exports.createExpressionLine =
+  (val) ->
+    type: 'pass'
+    val: val
+
 #### If
 
 # *If/else* statements. Acts as an expression by pushing down requested returns

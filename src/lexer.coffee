@@ -752,7 +752,7 @@ JS_KEYWORDS = [
 ]
 
 # CoffeeScript-only keywords.
-COFFEE_KEYWORDS = ['undefined', 'then', 'unless', 'until', 'loop', 'of', 'by', 'when']
+COFFEE_KEYWORDS = ['undefined', 'then', 'unless', 'until', 'loop', 'of', 'by', 'when', 'monadic']
 
 COFFEE_ALIAS_MAP =
   and  : '&&'
@@ -805,6 +805,7 @@ NUMBER     = ///
 
 OPERATOR   = /// ^ (
   ?: [-=]>             # function
+   | <[-=]-            # monadic binders
    | [-+*/%<>&|^!?=]=  # compound assign / compare
    | >>>=?             # zero-fill right shift
    | ([-+:])\1         # doubles
