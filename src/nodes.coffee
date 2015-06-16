@@ -2141,6 +2141,49 @@ exports.Switch = class Switch extends Base
     fragments.push @makeCode @tab + '}'
     fragments
 
+createCall =
+  (monad, args, methodName) ->
+    u = new Value monad, [new Access new Literal methodName]
+    new Call u, args
+
+createBindCall =
+  (monad, monadicValue, f) ->
+    createCall monad, [monadicValue, f], 'bind'
+
+createCallback =
+  (monadicLine, block) ->
+    params = monadicLine.params ? []
+    callback = new Code params, Block.wrap([block]), monadicLine.funcGlyph
+
+createLambdaAndBind =
+  (monad, monadicLine, block) ->
+    callback = createCallback monadicLine, block
+    createBindCall monad, monadicLine.val, callback
+
+exports.createMonadic = (monad, lines) ->
+  if lines[lines.length-1].type != 'pass'
+    throw new Error "last line is a bind"
+
+  currentBlock = lines[lines.length-1].val
+  for line in lines[0...-1] by -1
+    currentBlock = createLambdaAndBind monad, line, currentBlock
+
+  return currentBlock
+
+exports.createBinderLine =
+  (params, val, funcGlyph) ->
+    type: 'bind'
+    params: params
+    val: val
+    funcGlyph: funcGlyph
+
+exports.createExpressionLine =
+  (val) ->
+    type: 'pass'
+    params: null
+    val: val
+    funcGlyph: 'boundfunc'
+
 #### If
 
 # *If/else* statements. Acts as an expression by pushing down requested returns
