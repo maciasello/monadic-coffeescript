@@ -40,6 +40,7 @@
         <a href="#comparisons">Chained Comparisons</a>
         <a href="#strings">String Interpolation, Block Strings, and Block Comments</a>
         <a href="#regexes">Block Regular Expressions</a>
+        <a href="#monadic">Monadic statement</a>
         <a href="#cake">Cake, and Cakefiles</a>
         <a href="#source-maps">Source Maps</a>
         <a href="#scripts">"text/coffeescript" Script Tags</a>
@@ -932,6 +933,35 @@ Expressions
     </p>
     <%= codeFor('heregexes') %>
 
+    <p>
+      <span id="monadic" class="bookmark"></span>
+      <b class="header">Monadic Statement</b>
+      CoffeeScript supports statements that resemble Haskel's <tt>do</tt> notation. They allow
+      performing computations where each line of the block is interleaved with monad-specific
+      <tt>bind</tt>ing code. The statement is generic for different monad implementations so
+      the actual semantics of the block greatly differ depending on the monad in use.
+    </p>
+    <%= codeFor('monadic-promise') %>
+    <p>
+      Monadic statement supports destructuring of the value extracted from the monad and
+      passed to the continuation.
+    </p>
+    <%= codeFor('monadic-destructure') %>
+    <p>
+      The monadic statement consists of statement preamble <tt>monadic monadIdentifier</tt> and
+      a monadic block. The monadic statement's block is treated in a special way. Each logical
+      line of the block has a form of <tt>[params <--] monadic_expression</tt> where monadic
+      expression is an arbitrary expression that results in a monadic value. It is interpreted
+      as a call to <tt>monadIdentifier.bind</tt> with <tt>monadic_expression</tt> and a closure
+      accepting <tt>params</tt> as arguments. The closure's body is the rest of the monadic block.
+      If there is no bind operator in the current line the closure will have no parameters (so
+      essentially the pure value from the monad is discarded).
+    </p>
+    <%= codeFor('monadic-block') %>
+    <p>
+      You can use <tt>&lt;==</tt> instead of <tt>&lt--</tt> to make the closure bound to current
+      <tt>this</tt> object.
+    </p>
 
     <h2>
       <span id="cake" class="bookmark"></span>
